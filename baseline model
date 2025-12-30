@@ -1,1 +1,59 @@
+user = {
+    "uid": "u1",
+    "gender": 1,                     # 1=male, 2=female, 3=nonbinary
+    "gender_pref": {"same", "opposite"},
+    "housing": {"offcampus", "apartment"},
+    "roommates": {1, 2},
+    "has_pet": 1,                    # 1=yes, 2=no
+    "pet_ok": 1                      # 1=yes, 2=no
+}
+
+def gender_blocks(u):
+    blocks = set()
+
+    if "same" in u["gender_pref"]:
+        if u["gender"] == 1:
+            blocks.add("M")   # male–male
+        elif u["gender"] == 2:
+            blocks.add("F")   # female–female
+
+    if "opposite" in u["gender_pref"]:
+        blocks.add("C")       # cross-gender
+
+    return blocks
+
+def pet_blocks(u):
+    blocks = set()
+
+    if u["has_pet"] == 1:
+        blocks.add("P")   # pet owners
+    else:
+        blocks.add("N")   # no pets
+
+    if u["pet_ok"] == 1:
+        blocks.add("A")   # allows pets
+
+    return blocks
+
+def compute_blocks(u):
+    keys = []
+
+    for h in u["housing"]:
+        for r in u["roommates"]:
+            for g in gender_blocks(u):
+                for p in pet_blocks(u):
+                    keys.append((h, r, g, p))
+
+    return keys
+
+from collections import defaultdict
+
+def build_blocks(users):
+    blocks = defaultdict(set)
+
+    for u in users:
+        for key in compute_blocks(u):
+            blocks[key].add(u["uid"])
+
+    return blocks
 
