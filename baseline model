@@ -1,3 +1,5 @@
+## Hard Filtering for Necessary Features
+
 user = {
     "uid": "u1",
     "gender": 1,                     # 1=male, 2=female, 3=nonbinary
@@ -57,3 +59,95 @@ def build_blocks(users):
 
     return blocks
 
+
+
+## Clustering for Non Hard Filters
+
+user["soft"] = [
+    1,   # cleans immediately
+    3,   # guests anytime
+    2,   # alcohol sometimes
+    1,   # quiet hours strict
+    1,   # calm conflict
+    1,   # don't take food
+    2,   # 15–30 min commute
+    3,   # $1200–1500
+    6    # semesters
+]
+
+from sklearn.cluster import KMeans
+import numpy as np
+
+def cluster_block(block_users, user_map, k):
+    X = []
+    ids = []
+
+    for uid in block_users:
+        X.append(user_map[uid]["soft"])
+        ids.append(uid)
+
+    X = np.array(X)
+
+    k = min(k, len(X))  # can't have more clusters than people
+    model = KMeans(n_clusters=k, n_init=10)
+    labels = model.fit_predict(X)
+
+    clusters = {}
+    for i, label in enumerate(labels):
+        clusters.setdefault(label, []).append(ids[i])
+
+    return clusters
+
+def cluster_all_blocks(blocks, users, k=3):
+    user_map = {u["uid"]: u for u in users}
+    all_clusters = {}
+
+    for block_key, members in blocks.items():
+        if len(members) < 2:
+            continue  # can't cluster 1 person
+
+        clusters = cluster_block(members, user_map, k)
+        all_clusters[block_key] = clusters
+
+    return all_clusters
+
+
+
+## Decision Tree (can be added later?)
+
+# def pair_features(a, b):
+#     return [
+#         abs(a["clean"] - b["clean"]),
+#         abs(a["noise"] - b["noise"]),
+#         abs(a["guest"] - b["guest"]),
+#         abs(a["alcohol"] - b["alcohol"]),
+#         abs(a["budget"] - b["budget"]),
+#         abs(a["commute"] - b["commute"]),
+#         a["stay"] == b["stay"]
+#     ]
+
+# from sklearn.tree import DecisionTreeClassifier
+
+# X = []   # pair features
+# y = []   # 1 = compatible, 0 = not
+
+# for (u, v, label) in training_pairs:
+#     X.append(pair_features(u, v))
+#     y.append(label)
+
+# tree = DecisionTreeClassifier(
+#     max_depth=6,
+#     min_samples_leaf=20
+# )
+# tree.fit(X, y)
+
+# def score_candidates(user, candidates, user_map, tree):
+#     scores = []
+
+#     for cid in candidates:
+#         other = user_map[cid]
+#         feats = pair_features(user, other)
+#         prob = tree.predict_proba([feats])[0][1]
+#         scores.append((cid, prob))
+
+#     return sorted(scores, key=lambda x: -x[1])
