@@ -53,7 +53,7 @@ exports.onUserWrite = functions.firestore
 
   batch.update(db.doc(`users/${uid}`), {blocks: newBlocks});
   await batch.commit();
-
+#URL should be available once "gcloud run deploy roomie-ml --source services/cloud-run" is run 
   for (const b of newBlocks) {
     await fetch("https://YOUR-CLOUD-RUN-URL/cluster", {
       method:"POST",
