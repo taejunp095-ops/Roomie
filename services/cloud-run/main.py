@@ -38,7 +38,8 @@ def cluster():
     X = StandardScaler().fit_transform(X)
     k = min(3,len(X))
     model = KMeans(n_clusters=k,n_init=10).fit(X)
-
+#For KMeans, can adjust k (number of small groups within blocks), n_init (number of tries before starting groups), max_iter, feature weighting (done before KMeans)
+#Feature weighting example: X[:,7] *= 2 when budget matters more
     cref = db.document(f"blocks/{block_id}").collection("clusters")
     for d in cref.stream():
         d.reference.delete()
