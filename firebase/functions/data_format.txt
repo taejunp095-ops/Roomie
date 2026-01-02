@@ -1,7 +1,10 @@
+Create these collections (json documents)
 /users/{uid}
 /blocks/{blockId}
 /blocks/{blockId}/clusters/{clusterId}
 
+
+Example User Document
 users/u1
 {
   "gender": 1,
