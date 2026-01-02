@@ -1,0 +1,1 @@
+gcloud run deploy roomie-ml --source services/cloud-run
