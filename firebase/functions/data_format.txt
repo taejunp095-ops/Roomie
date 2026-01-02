@@ -1,0 +1,15 @@
+/users/{uid}
+/blocks/{blockId}
+/blocks/{blockId}/clusters/{clusterId}
+
+users/u1
+{
+  "gender": 1,
+  "gender_pref": ["same","opposite"],
+  "housing": ["offcampus"],
+  "roommates": [2],
+  "has_pet": 1,
+  "pet_ok": 1,
+  "soft": [0.3,0.6,0.2,0.9,0.1,0.5,0.7,0.4],
+  "blocks": []
+}
