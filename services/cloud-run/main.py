@@ -15,7 +15,16 @@ db = firestore.Client()
 
 @app.route("/cluster", methods=["POST"])
 def cluster():
-    block_id = request.json["blockId"]
+    data = request.get_json(silent=True)
+    if not data or "blockId" not in data:
+        return jsonify({"error": "blockId required"}), 400
+
+    block_id = data["blockId"]
+
+    # prevent Firestore path injection
+    if not isinstance(block_id, str) or "/" in block_id or block_id.strip() == "":
+        return jsonify({"error": "invalid blockId"}), 400
+
     block = db.document(f"blocks/{block_id}").get()
 
     if not block.exists:
@@ -24,17 +33,43 @@ def cluster():
     members = block.to_dict().get("members",[])
     users = []
 
+    users = []
+    dim = None
+    
     for uid in members:
         snap = db.document(f"users/{uid}").get()
-        if snap.exists and "soft" in snap.to_dict():
-            users.append((uid,snap.to_dict()["soft"]))
+        if not snap.exists:
+            continue
+    
+        soft = snap.to_dict().get("soft")
+    
+        # must be a list
+        if not isinstance(soft, list):
+            continue
+    
+        # first valid vector defines dimension
+        if dim is None:
+            dim = len(soft)
+    
+        # must match dimension
+        if len(soft) != dim:
+            continue
+    
+        users.append((uid, soft))
 
     if len(users) < 2:
         return jsonify({"skipped":True})
 
     ids = [u[0] for u in users]
-    X = np.array([u[1] for u in users])
-
+    try:
+        X = np.array([u[1] for u in users], dtype=float)
+    except:
+        return jsonify({"error": "invalid feature vectors"}), 400
+    
+    # reject NaN and infinity
+    if not np.isfinite(X).all():
+        return jsonify({"error": "NaN or infinite values in features"}), 400
+    
     X = StandardScaler().fit_transform(X)
     k = min(3,len(X))
     model = KMeans(n_clusters=k,n_init=10).fit(X)
